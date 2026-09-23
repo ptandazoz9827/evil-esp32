@@ -30,3 +30,6 @@ npm-debug.log*
 # Variables de entorno (contraseñas / tokens)
 .env
 .env.local
+
+# Material académico local (no publicar en este repositorio)
+tesis-latex/
