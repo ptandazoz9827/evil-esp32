@@ -1,0 +1,78 @@
+%============================ ECONÓMICO-AMBIENTAL (ENTREGA 3) ================
+\chapter{Análisis económico y ambiental}
+\label{cap:economico}
+
+\section{Estimación de costos}
+El costo total del proyecto se descompone en hardware, desarrollo (horas\nobreakdash-persona) y operación en la nube. La Tabla~\ref{tab:costos} presenta la estimación.
+
+\begin{table}[H]
+\centering
+\caption{Estimación de costos del proyecto}
+\label{tab:costos}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}X c c c@{}}
+\toprule
+\textbf{Rubro} & \textbf{Cant.} & \textbf{Costo unit. (USD)} & \textbf{Subtotal (USD)} \\
+\midrule
+Hardware (BOM, Tabla~\ref{tab:bom}) & 1 & 24.20 & 24.20 \\
+Desarrollo firmware (h) & 40 & 8.00 & 320.00 \\
+Desarrollo servidor y frontend (h) & 60 & 8.00 & 480.00 \\
+Pruebas y documentación (h) & 30 & 8.00 & 240.00 \\
+Operación en la nube (mes) & 12 & 0.00 & 0.00 \\
+\midrule
+\multicolumn{3}{r}{\textbf{Costo total estimado}} & \textbf{1\,064.20} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+El costo operativo se mantiene en cero gracias al uso del nivel gratuito de Cloudflare Tunnel y a la ejecución del servidor en un equipo propio, lo que hace al sistema especialmente atractivo para pequeños negocios. El costo marginal de replicar una unidad de hardware adicional, incluida la alimentación autónoma, es de aproximadamente USD~24.20.
+
+\section{Curva S del proyecto}
+La Figura~\ref{fig:curvas} presenta la curva~S del avance acumulado planificado frente al real a lo largo de las 16 semanas de la macro actividad, expresado como porcentaje de avance ponderado por el peso de cada entrega (20\,\%, 30\,\%, 25\,\% y 25\,\%).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.92\linewidth, height=7cm,
+  xlabel={Semana}, ylabel={Avance acumulado (\%)},
+  xmin=0, xmax=16, ymin=0, ymax=100,
+  xtick={0,2,4,6,8,10,12,14,16},
+  ytick={0,20,40,60,80,100},
+  legend pos=north west, legend cell align=left,
+  ymajorgrids, grid style=gray!25
+]
+% Planificado (curva S teorica)
+\addplot[thick,eilorcyan,mark=*,mark size=1.3pt] coordinates {
+  (0,0)(2,5)(4,20)(6,35)(8,50)(10,63)(12,75)(14,88)(16,100) };
+\addlegendentry{Planificado}
+% Real (ligeramente adelantado en desarrollo)
+\addplot[thick,eiloremerald,dashed,mark=square*,mark size=1.3pt] coordinates {
+  (0,0)(2,6)(4,20)(6,40)(8,55)(10,66)(12,78)(14,90)(16,100) };
+\addlegendentry{Real}
+% Hitos de entrega
+\draw[gray,dashed] (axis cs:4,0) -- (axis cs:4,100);
+\draw[gray,dashed] (axis cs:8,0) -- (axis cs:8,100);
+\draw[gray,dashed] (axis cs:12,0) -- (axis cs:12,100);
+\draw[gray,dashed] (axis cs:16,0) -- (axis cs:16,100);
+\node[font=\scriptsize,rotate=90,anchor=south] at (axis cs:4,3) {E1};
+\node[font=\scriptsize,rotate=90,anchor=south] at (axis cs:8,3) {E2};
+\node[font=\scriptsize,rotate=90,anchor=south] at (axis cs:12,3) {E3};
+\node[font=\scriptsize,rotate=90,anchor=south] at (axis cs:16,3) {E4};
+\end{axis}
+\end{tikzpicture}
+\caption{Curva S: avance acumulado planificado vs. real.}
+\label{fig:curvas}
+\end{figure}
+
+\section{Análisis de impacto ambiental}
+El impacto ambiental de EILOR es reducido y, en balance, potencialmente positivo:
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Consumo energético:} el ESP32 opera en el orden de cientos de miliamperios; su huella energética es marginal frente a equipos de instrumentación tradicionales.
+  \item \textbf{Ciclo de vida del hardware:} el uso de una placa reutilizable y componentes estándar favorece la reparación y la reutilización, en línea con principios de electrónica sostenible.
+  \item \textbf{Eficiencia del espectro:} al recomendar canales menos congestionados, el sistema contribuye indirectamente a un uso más eficiente del recurso radioeléctrico, reduciendo retransmisiones y, con ello, el consumo energético agregado de las redes cercanas.
+  \item \textbf{Software sin dependencias pesadas:} la persistencia en archivos y la ausencia de bases de datos y servicios adicionales minimizan el cómputo requerido en operación.
+\end{itemize}
+
+\section{Relación costo-beneficio}
+Con una inversión de hardware inferior a USD~25 por unidad y costo operativo nulo, EILOR entrega capacidades ---diagnóstico de espectro, detección de amenazas y gestión de invitados--- que en soluciones comerciales requieren equipos de costo muy superior. Para un pequeño negocio, el retorno se materializa tanto en la mejora del servicio Wi\nobreakdash-Fi como en el valor de la base de contactos de invitados obtenida de forma consentida.

@@ -1,0 +1,70 @@
+%============================ CLOUDFLARE / SAAS (ENTREGA 2) =================
+\chapter{Despliegue SaaS en la nube con Cloudflare}
+\label{cap:cloudflare}
+
+\section{Modelo de entrega como servicio (SaaS)}
+EILOR se entrega bajo un modelo \emph{Software as a Service}: el servidor Node.js se ejecuta de forma continua y se publica en Internet mediante un \emph{túnel} de Cloudflare, de modo que tanto el dispositivo ESP32 como los clientes web acceden al sistema a través de un nombre de dominio público con cifrado TLS, sin exponer directamente la máquina ni abrir puertos entrantes en la red local. En la implementación de referencia, el sistema se publica en el dominio \code{esp.orellanadigitalco.trade} sobre el puerto 443 (WSS/HTTPS).
+
+\section{Arquitectura del túnel}
+Cloudflare Tunnel (\code{cloudflared}) establece una conexión saliente y persistente desde el servidor de origen hacia la red perimetral (\emph{edge}) de Cloudflare. El tráfico de los usuarios llega primero al \emph{edge}, donde se termina el TLS, y desde allí viaja por el túnel hasta el servidor local. La Figura~\ref{fig:cloudflare} ilustra el modelo.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  n/.style={rectangle,rounded corners=3pt,draw,thick,align=center,minimum height=1.0cm,minimum width=2.6cm},
+  arr/.style={-{Latex[length=2.4mm]},thick},
+  lbl/.style={font=\scriptsize\itshape,align=center}
+]
+\node[n,fill=eilorcyan!10] (esp) {ESP32};
+\node[n,fill=gray!8,below=0.8cm of esp] (web) {Navegador\\/ Invitado};
+\node[n,fill=orange!14,right=2.6cm of esp,yshift=-0.7cm,minimum height=1.8cm] (edge) {Cloudflare\\Edge\\(TLS 443)};
+\node[n,fill=yellow!14,right=2.4cm of edge] (cfd) {cloudflared\\(túnel saliente)};
+\node[n,fill=eiloremerald!12,right=2.2cm of cfd] (srv) {Node.js\\:3002 (PM2)};
+
+\draw[arr] (esp) -- node[lbl,above]{WSS} (edge);
+\draw[arr] (web) -- node[lbl,below]{HTTPS} (edge);
+\draw[{Latex[length=2.4mm]}-{Latex[length=2.4mm]},thick] (edge) -- node[lbl,above]{túnel\\cifrado} (cfd);
+\draw[arr] (cfd) -- node[lbl,above]{HTTP\\local} (srv);
+\end{tikzpicture}
+\caption{Publicación del servidor mediante Cloudflare Tunnel.}
+\label{fig:cloudflare}
+\end{figure}
+
+\section{Ventajas de seguridad}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Sin puertos entrantes:} el origen no expone puertos; el túnel es una conexión saliente, lo que reduce la superficie de ataque.
+  \item \textbf{TLS gestionado:} el certificado y la terminación TLS los administra Cloudflare, garantizando cifrado extremo para WSS y HTTPS.
+  \item \textbf{Ocultamiento de IP:} la dirección real del servidor no se publica en el DNS.
+  \item \textbf{Controles de borde:} posibilidad de aplicar reglas de firewall, limitación de tasa y protección frente a denegación de servicio en el \emph{edge}.
+\end{itemize}
+
+\section{Configuración de referencia}
+El Listado~\ref{lst:cfd} muestra una configuración típica de \code{cloudflared} con reglas de \emph{ingress} que enrutan el hostname público al servidor local, habilitando explícitamente WebSocket.
+
+\begin{lstlisting}[caption={Configuración de Cloudflare Tunnel (config.yml)},label={lst:cfd},basicstyle=\ttfamily\footnotesize]
+tunnel: eilor-tunnel
+credentials-file: /home/saul/.cloudflared/<UUID>.json
+
+ingress:
+  - hostname: esp.orellanadigitalco.trade
+    service: http://localhost:3002
+    originRequest:
+      noTLSVerify: true
+      # WebSocket queda habilitado por defecto en cloudflared
+  - service: http_status:404
+\end{lstlisting}
+
+El registro DNS asociado es un \code{CNAME} del hostname público hacia \code{<UUID>.cfargotunnel.com}, creado automáticamente por \code{cloudflared tunnel route dns}. Del lado del firmware, la conexión se establece con TLS mediante \code{webSocket.beginSSL(WS\_SERVER\_HOST, 443, "/")}, coherente con la terminación TLS en el \emph{edge}.
+
+\section{Gestión del proceso con PM2}
+El servidor se ejecuta bajo el gestor de procesos PM2, que garantiza su reinicio automático ante fallos y su arranque tras un reinicio del sistema operativo. El Listado~\ref{lst:pm2} resume los comandos de operación empleados.
+
+\begin{lstlisting}[style=bash,caption={Operación del servicio con PM2},label={lst:pm2},basicstyle=\ttfamily\footnotesize]
+pm2 start server.js --name eilor   # registrar el servicio
+pm2 restart eilor --update-env     # recargar tras cambios de codigo
+pm2 save                           # persistir para arranque automatico
+pm2 logs eilor --lines 20          # inspeccionar registros
+\end{lstlisting}
+
+En conjunto, Cloudflare Tunnel y PM2 conforman la capa de \emph{entrega y operación} del SaaS: alta disponibilidad del proceso, publicación segura sin exposición directa y acceso cifrado uniforme para el hardware y los usuarios.

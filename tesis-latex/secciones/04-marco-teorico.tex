@@ -1,0 +1,56 @@
+%============================ MARCO TEÓRICO (ENTREGA 1) =====================
+\chapter{Marco teórico y antecedentes}
+\label{cap:marco}
+
+Este capítulo sintetiza los fundamentos conceptuales y los antecedentes que sustentan el proyecto, organizados en cinco ejes: el medio radioeléctrico de 2.4~GHz, las tecnologías Wi\nobreakdash-Fi y BLE, los modelos de análisis de espectro y de localización por RSSI, la seguridad inalámbrica y las tecnologías de software de tiempo real.
+
+\section{El espectro de 2.4 GHz y la interferencia de canal}
+La banda ISM de 2.4~GHz se divide, en la mayoría de las regiones, en trece canales Wi\nobreakdash-Fi separados 5~MHz entre sí. Dado que cada canal ocupa aproximadamente 20--22~MHz, canales contiguos se solapan y solo el conjunto \{1, 6, 11\} resulta mutuamente no solapado \parencite{gast2005}. La interferencia se clasifica en \emph{co\nobreakdash-canal} (dos emisores en el mismo canal, que comparten el medio mediante CSMA/CA) y de \emph{canal adyacente} (emisores en canales cercanos cuyo espectro se traslapa, degradando la relación señal\nobreakdash-ruido). El modelo analítico de Bianchi \parencite{bianchi2000} sobre la función de coordinación distribuida (DCF) de IEEE~802.11 explica por qué el rendimiento agregado decae al aumentar el número de estaciones que contienden por un canal, justificando la importancia de seleccionar canales poco congestionados.
+
+\section{Wi-Fi (IEEE 802.11) y escaneo pasivo/activo}
+El estándar IEEE~802.11 \parencite{ieee80211} define los mecanismos de descubrimiento de redes: en el escaneo \emph{pasivo}, la estación escucha las tramas \emph{beacon} que los puntos de acceso emiten periódicamente; en el \emph{activo}, envía \emph{probe requests} y espera \emph{probe responses}. De estas tramas se extraen el identificador de red (SSID), la dirección física del punto de acceso (BSSID), el canal, la intensidad de señal recibida (RSSI) y el tipo de cifrado. EILOR utiliza el escaneo que ofrece la API del ESP32 para obtener estos campos sin decodificar tráfico de datos de terceros, respetando así la delimitación ética del proyecto.
+
+\section{Bluetooth Low Energy (BLE)}
+BLE, definido a partir de la especificación Bluetooth Core \parencite{bluetooth54} y descrito en profundidad por Heydon \parencite{heydon2013}, emplea 40 canales de 2~MHz, de los cuales tres ---los canales 37, 38 y 39, ubicados en 2402, 2426 y 2480~MHz--- se reservan para \emph{advertising} (anuncio de presencia). Un dispositivo BLE emite paquetes de \emph{advertising} que otros pueden detectar sin establecer conexión, exponiendo un nombre, una dirección y una potencia de señal. EILOR aprovecha estos paquetes para su "radar de proximidad", estimando la cercanía relativa de las balizas a partir del RSSI.
+
+\section{Estimación de distancia por RSSI}
+La conversión de RSSI a distancia se apoya en el modelo de pérdida de trayectoria logarítmica \parencite{rappaport2002}, según el cual la potencia recibida decae proporcionalmente al logaritmo de la distancia:
+\begin{equation}
+RSSI(d) = RSSI(d_0) - 10\,n \log_{10}\!\left(\frac{d}{d_0}\right),
+\label{eq:pathloss}
+\end{equation}
+donde $n$ es el exponente de pérdida de trayectoria (típicamente entre 2 en espacio libre y 4 en interiores con obstáculos) y $d_0$ una distancia de referencia. Despejando $d$ se obtiene una estimación de distancia que, aunque sensible al entorno, resulta suficiente para un posicionamiento radial cualitativo, tal como demostró el sistema RADAR de Bahl y Padmanabhan \parencite{bahl2000}, pionero en la localización en interiores basada en RSSI.
+
+\section{Identificación de fabricante por OUI y MAC aleatorizadas}
+Los primeros tres octetos de una dirección MAC constituyen el \emph{Organizationally Unique Identifier} (OUI), asignado por la IEEE a cada fabricante \parencite{ieeeoui}. Consultando el OUI puede inferirse el fabricante de un dispositivo. No obstante, desde hace varios años los sistemas operativos móviles emplean \emph{aleatorización de MAC} para preservar la privacidad, generando direcciones localmente administradas ---identificables porque el segundo bit menos significativo del primer octeto está a 1--- que impiden el rastreo persistente \parencite{martin2017}. EILOR implementa tanto la búsqueda de fabricante por OUI como la detección de direcciones aleatorizadas, informando al analista cuándo un dispositivo oculta su identidad real.
+
+\section{Seguridad inalámbrica: gemelo malicioso y buenas prácticas}
+El ataque de \emph{gemelo malicioso} consiste en desplegar un punto de acceso que anuncia el mismo SSID que una red legítima para inducir a las víctimas a conectarse a él, habilitando ataques de intermediario (\emph{man\nobreakdash-in\nobreakdash-the\nobreakdash-middle}) \parencite{callegati2009}. Una heurística de detección consiste en identificar un mismo SSID anunciado por múltiples BSSID distintos, señal de posible suplantación. Los controles recomendados por marcos como OWASP \parencite{owasp2021} ---autenticación robusta, minimización de datos y transparencia hacia el usuario--- guían el diseño de la capa de seguridad y del portal de registro de EILOR.
+
+\section{Tecnologías de software de tiempo real}
+La comunicación bidireccional de baja latencia entre el hardware, el servidor y los clientes web se sustenta en el protocolo WebSocket \parencite{rfc6455}, que mantiene una conexión persistente sobre TCP evitando el costo de las peticiones HTTP repetidas. El servidor se organiza siguiendo el estilo arquitectónico REST \parencite{fielding2002} para sus endpoints de consulta y control, y se ejecuta sobre Node.js \parencite{nodejs2024}, cuyo modelo de E/S no bloqueante resulta idóneo para manejar numerosas conexiones concurrentes. El portal cautivo, por su parte, se apoya en la manipulación de las consultas DNS \parencite{rfc1035} para redirigir a los clientes a la página de registro. Los fundamentos generales de redes que enmarcan estas tecnologías se encuentran en obras de referencia como las de Tanenbaum y Wetherall \parencite{tanenbaum2011} y Kurose y Ross \parencite{kurose2017}.
+
+\section{Síntesis de antecedentes}
+La Tabla~\ref{tab:antecedentes} resume cómo los antecedentes revisados aportan a cada componente de EILOR.
+
+\begin{table}[H]
+\centering
+\caption{Aporte de los antecedentes a los componentes de EILOR}
+\label{tab:antecedentes}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.1cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{4.0cm}@{}}
+\toprule
+\textbf{Componente} & \textbf{Fundamento / antecedente} & \textbf{Referencia} \\
+\midrule
+Análisis de canal & Interferencia y DCF en 802.11 & \textcite{gast2005}; \textcite{bianchi2000} \\
+Escaneo Wi-Fi & Tramas \emph{beacon}/\emph{probe} & \textcite{ieee80211} \\
+Radar BLE & Canales de \emph{advertising} & \textcite{bluetooth54}; \textcite{heydon2013} \\
+Distancia por RSSI & Modelo de pérdida de trayectoria & \textcite{rappaport2002}; \textcite{bahl2000} \\
+Fabricante / MAC & OUI y aleatorización & \textcite{ieeeoui}; \textcite{martin2017} \\
+Detección \emph{evil twin} & MITM y buenas prácticas & \textcite{callegati2009}; \textcite{owasp2021} \\
+Comunicación en vivo & WebSocket y REST & \textcite{rfc6455}; \textcite{fielding2002} \\
+Portal cautivo & Redirección DNS & \textcite{rfc1035} \\
+Plataforma de servidor & Node.js, E/S no bloqueante & \textcite{nodejs2024} \\
+\bottomrule
+\end{tabularx}
+\end{table}

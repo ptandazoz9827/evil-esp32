@@ -1,0 +1,32 @@
+# Dependencias
+node_modules/
+
+# Artefactos de compilación LaTeX
+tesis-latex/*.aux
+tesis-latex/*.bbl
+tesis-latex/*.bcf
+tesis-latex/*.blg
+tesis-latex/*.fdb_latexmk
+tesis-latex/*.fls
+tesis-latex/*.lof
+tesis-latex/*.log
+tesis-latex/*.lot
+tesis-latex/*.out
+tesis-latex/*.run.xml
+tesis-latex/*.toc
+tesis-latex/manual-eilor/*.aux
+tesis-latex/manual-eilor/*.log
+tesis-latex/manual-eilor/*.out
+tesis-latex/manual-eilor/*.toc
+
+# Estado persistido de EILOR (se regenera solo)
+data/
+
+# Logs y temporales
+*.log
+npm-debug.log*
+.DS_Store
+
+# Variables de entorno (contraseñas / tokens)
+.env
+.env.local

@@ -1,0 +1,205 @@
+%==============================================================================
+%  EILOR --- PROYECTO TECNOLÓGICO EN SISTEMAS DE INFORMACIÓN Y CIBERSEGURIDAD
+%  Documento tipo tesis (integra las 4 entregas de la macro actividad)
+%
+%  COMPILACIÓN (Overleaf o TeX Live completo):
+%     pdflatex main
+%     biber   main
+%     pdflatex main
+%     pdflatex main
+%  (En Overleaf: seleccionar compilador pdfLaTeX; el biber corre solo.)
+%==============================================================================
+\documentclass[12pt,a4paper,oneside]{book}
+
+%--- Idioma y codificación --------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+%--- Geometría y espaciado --------------------------------------------------
+\usepackage{geometry}
+\geometry{a4paper,left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{parskip}
+
+%--- Gráficos, color, tablas ------------------------------------------------
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{ragged2e}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+
+%--- Diagramas --------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,shapes.misc,arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+%--- Encabezados y pies -----------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+% Marca de capítulo sin el prefijo "Capítulo N." y sin forzar mayúsculas,
+% para que el encabezado no se solape con el nombre del proyecto.
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\fancyhead[L]{\small\textsc{Proyecto EILOR}}
+\fancyhead[R]{\small\itshape\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%--- Colores corporativos del proyecto --------------------------------------
+\definecolor{eilorcyan}{RGB}{0,150,180}
+\definecolor{eiloremerald}{RGB}{0,160,110}
+\definecolor{eilordark}{RGB}{10,20,36}
+\definecolor{codebg}{RGB}{248,249,250}
+\definecolor{codecomment}{RGB}{106,115,125}
+\definecolor{codestring}{RGB}{3,71,120}
+\definecolor{codekw}{RGB}{170,13,145}
+\definecolor{codendk}{RGB}{20,110,120}
+% Paleta institucional de la carátula Faceta (compartida con el manual).
+\definecolor{facetred}{HTML}{A4063E}
+\definecolor{facetgreen}{HTML}{93C842}
+\definecolor{facetnavy}{HTML}{282660}
+\definecolor{facetdark}{HTML}{161718}
+
+%--- Listados de código -----------------------------------------------------
+\usepackage{listings}
+\lstdefinelanguage{JavaScript}{
+  keywords={const,let,var,function,return,if,else,for,while,do,new,require,module,exports,async,await,try,catch,finally,typeof,class,this,break,switch,case,default,true,false,null,undefined,in,of,throw,delete},
+  keywordstyle=\color{codekw}\bfseries,
+  ndkeywords={console,JSON,Date,Math,Array,Map,Set,Object,Promise,express,app,res,req,ws,wss,process,setInterval,setTimeout,localStorage,fetch,document},
+  ndkeywordstyle=\color{codendk},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]`
+}
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  keywordstyle=\color{codekw}\bfseries,
+  numbers=left,numberstyle=\tiny\color{gray},numbersep=8pt,
+  breaklines=true,breakatwhitespace=false,
+  frame=single,rulecolor=\color{gray!45},
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b,
+  extendedchars=true,
+  literate=%
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+    {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+    {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {ü}{{\"u}}1 {Ü}{{\"U}}1
+    {¿}{{?`}}1 {¡}{{!`}}1 {°}{{\textdegree}}1 {º}{{\textordmasculine}}1
+}
+\lstdefinestyle{js}{language=JavaScript}
+\lstdefinestyle{cpp}{language=C++}
+\lstdefinestyle{bash}{language=bash,keywordstyle=\color{eiloremerald}\bfseries}
+\lstdefinestyle{json}{basicstyle=\ttfamily\footnotesize}
+
+%--- Enlaces (cargar antes de biblatex) -------------------------------------
+\usepackage{csquotes}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=eilordark,
+  citecolor=eilorcyan,
+  urlcolor=eilorcyan,
+  pdftitle={EILOR --- Analizador de Espectro 2.4 GHz y Portal de Registro},
+  pdfauthor={Estudiante}
+}
+
+%--- Bibliografía APA 7 -----------------------------------------------------
+\usepackage[style=apa,backend=biber,sortcites=true]{biblatex}
+\addbibresource{refs.bib}
+
+%--- Comandos de ayuda ------------------------------------------------------
+% Inserta una captura de pantalla real (archivo en figuras/), con marco fino.
+% Uso: \captura[ancho]{ruta-sin-extension}{pie de figura}
+\newcommand{\captura}[3][0.85]{%
+  \begin{figure}[H]\centering
+  \setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.4pt}%
+  \fcolorbox{gray!45}{white}{\includegraphics[width=#1\linewidth]{figuras/#2}}%
+  \caption{#3}
+  \end{figure}}
+
+% Placeholder para capturas aún no disponibles (fotografías físicas).
+\newcommand{\capturapend}[2][0.7]{%
+  \begin{figure}[H]\centering
+  \fbox{\begin{minipage}[c][3.6cm][c]{#1\linewidth}\centering
+  \textcolor{gray}{\ttfamily [ FOTOGRAFÍA PENDIENTE ]}\\[4pt]
+  \small\textcolor{gray}{#2}
+  \end{minipage}}
+  \caption{#2}
+  \end{figure}}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+% Datos de despliegue de referencia (editar si cambian)
+\newcommand{\plataformaurl}{\url{https://esp.orellanadigitalco.trade/}}
+\newcommand{\repourl}{\url{https://github.com/ptandazoz9827/evil-esp32}}
+
+\begin{document}
+
+%============================ PORTADA =======================================
+\input{secciones/00-portada}
+
+%============================ FRONTAL =======================================
+\frontmatter\pagenumbering{roman}\setcounter{page}{2}
+\input{secciones/01-resumen}
+\tableofcontents
+\listoffigures
+\listoftables
+\cleardoublepage
+
+%============================ CUERPO ========================================
+\mainmatter\pagenumbering{arabic}\setcounter{page}{1}
+
+\input{secciones/02-introduccion}
+
+% ---- ENTREGA 1: FUNDAMENTACIÓN Y PLANIFICACIÓN ----
+\input{secciones/03-problema}
+\input{secciones/04-marco-teorico}
+\input{secciones/05-objetivos}
+\input{secciones/06-arquitectura}
+
+% ---- ENTREGA 2: DESARROLLO TÉCNICO ----
+\input{secciones/07-diseno}
+\input{secciones/07a-electronica}
+\input{secciones/07b-basedatos}
+\input{secciones/08-implementacion}
+\input{secciones/08a-cloudflare}
+\input{secciones/08b-plataforma}
+\input{secciones/09-pruebas}
+
+% ---- ENTREGA 3: ANÁLISIS Y OPTIMIZACIÓN ----
+\input{secciones/10-desempeno}
+\input{secciones/11-economico-ambiental}
+\input{secciones/12-escalabilidad}
+\input{secciones/13-manuales}
+
+% ---- ENTREGA 4: CIERRE Y SUSTENTACIÓN ----
+\input{secciones/14-conclusiones}
+
+%============================ REFERENCIAS ===================================
+\cleardoublepage
+\phantomsection\addcontentsline{toc}{chapter}{Referencias bibliográficas}
+\printbibliography[title={Referencias bibliográficas}]
+
+%============================ ANEXOS ========================================
+\input{secciones/15-anexos}
+
+\end{document}

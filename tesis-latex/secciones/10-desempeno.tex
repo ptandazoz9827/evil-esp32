@@ -1,0 +1,75 @@
+%============================ DESEMPEÑO (ENTREGA 3) =========================
+\chapter{Evaluación de desempeño}
+\label{cap:desempeno}
+
+\section{Metodología de evaluación}
+La evaluación de desempeño contrastó los indicadores medidos frente a los criterios de logro fijados en la matriz SMART (Tabla~\ref{tab:smart}). Se consideraron tres dimensiones: \emph{capacidad de captura} (dispositivos y canales procesados), \emph{latencia} (periodos de ciclo y difusión) y \emph{robustez} (persistencia y recuperación).
+
+\section{Cumplimiento de objetivos}
+La Tabla~\ref{tab:cumplimiento} evalúa cada objetivo específico frente a su indicador.
+
+\begin{table}[H]
+\centering
+\caption{Cumplimiento de objetivos frente a los indicadores SMART}
+\label{tab:cumplimiento}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X l l@{}}
+\toprule
+\textbf{OE} & \textbf{Indicador} & \textbf{Meta} & \textbf{Resultado} \\
+\midrule
+OE1 & Canales y latencia de ciclo & 13+3; $\le$3~s & 13+3; $\sim$3~s \\
+OE2 & Puntaje y canal recomendado & 13 canales; 1/6/11 & Cumplido \\
+OE3 & Catálogo OUI & $\ge$120 & 123 prefijos \\
+OE4 & Control autenticado & 401/200 & 401/200 \\
+OE5 & Registros entregados & 100\,\% con enlace & Con \emph{buffer} \\
+OE6 & Casos superados & $\ge$90\,\% & 100\,\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Análisis de latencia y capacidad}
+El ciclo de escaneo de $\sim$3~s ofrece un compromiso adecuado entre frescura de la información y carga de la radio del ESP32, que debe multiplexar Wi\nobreakdash-Fi y BLE en modos conmutables. La difusión por WebSocket agrega latencias despreciables frente al ciclo de escaneo, dado el modelo de \emph{push} del servidor: en una medición automatizada sobre 100 ingestas consecutivas, el tiempo de extremo a extremo entre la recepción de un lote (\code{POST /api/scan}) y la difusión del evento \code{scan\_update} a un cliente WebSocket presentó una mediana de \textbf{2.5~ms} y un percentil~95 de \textbf{3.2~ms} (máximo 5.4~ms). En el lado del servidor, el modelo de E/S no bloqueante de Node.js \parencite{nodejs2024} permite atender simultáneamente el socket del dispositivo y múltiples clientes del dashboard sin degradación perceptible en el rango de prueba. La Tabla~\ref{tab:latencia} resume la distribución medida.
+
+\begin{table}[H]
+\centering
+\caption{Latencia de procesamiento y difusión (100 ingestas consecutivas, servidor local)}
+\label{tab:latencia}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}X c c c c@{}}
+\toprule
+\textbf{Trayecto medido} & \textbf{Mín.} & \textbf{Mediana} & \textbf{P95} & \textbf{Máx.} \\
+\midrule
+Respuesta REST \code{POST /api/scan} & 0.85~ms & 2.39~ms & 3.04~ms & 5.33~ms \\
+Ingesta REST $\rightarrow$ \emph{push} WebSocket (extremo a extremo) & 0.90~ms & 2.49~ms & 3.16~ms & 5.42~ms \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent Estos valores corresponden al procesamiento del servidor (anotación de fabricante, recálculo del mapa de calor, detección de gemelos maliciosos y difusión) y excluyen el ciclo de escaneo del dispositivo y la latencia de la red o del túnel; confirman que la lógica de agregación no constituye un cuello de botella frente al periodo de escaneo de 3~s.
+
+\section{Robustez y disponibilidad}
+La prueba CP07 confirmó que, tras un reinicio ordenado, el sistema recupera el estado persistido (dispositivos, serie temporal y registros), evidenciado por el mensaje de restauración del módulo \code{store}. Combinado con la gestión de PM2 ---que reinicia el proceso ante fallos--- el sistema alcanza una disponibilidad operativa alta para un prototipo. El \emph{watchdog} de 15~s detecta y notifica la pérdida del enlace con el dispositivo, actualizando el estado en el dashboard.
+
+\section{Comparación con los objetivos planteados}
+La Figura~\ref{fig:radar-cumplimiento} resume gráficamente el nivel de cumplimiento por objetivo, todos en o por encima de la meta.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, width=0.9\linewidth, height=6cm,
+  bar width=14pt,
+  ymin=0, ymax=110,
+  ylabel={Cumplimiento (\%)},
+  symbolic x coords={OE1,OE2,OE3,OE4,OE5,OE6},
+  xtick=data, nodes near coords, nodes near coords style={font=\scriptsize},
+  enlarge x limits=0.12,
+  ymajorgrids, grid style=gray!25
+]
+\addplot[fill=eilorcyan!60,draw=eilorcyan!80!black] coordinates
+  {(OE1,100)(OE2,100)(OE3,102)(OE4,100)(OE5,100)(OE6,111)};
+\end{axis}
+\end{tikzpicture}
+\caption{Nivel de cumplimiento por objetivo específico (100\,\% = meta).}
+\label{fig:radar-cumplimiento}
+\end{figure}

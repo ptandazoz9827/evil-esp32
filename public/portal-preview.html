@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vista previa — Portal Cautivo EILOR</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(160deg,#0a1424,#14243d);
+color:#f1f5f9;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.preview-banner{background:rgba(255,179,0,.12);border:1px solid rgba(255,179,0,.4);color:#ffb300;
+border-radius:10px;padding:8px 14px;font-size:12px;margin-bottom:18px;max-width:380px;text-align:center}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(0,229,255,.15);border-radius:16px;
+padding:28px 24px;width:100%;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+h1{font-size:22px;margin-bottom:4px}
+.sub{color:#8496b3;font-size:13px;margin-bottom:20px}
+label{display:block;font-size:12px;color:#8496b3;margin:12px 0 5px;letter-spacing:.03em}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+background:#0a1424;color:#f1f5f9;font-size:15px}
+input:focus{outline:none;border-color:#00e5ff}
+button{width:100%;margin-top:20px;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;
+background:linear-gradient(90deg,#00e5ff,#00ff9d);color:#04121f;cursor:pointer}
+.note{font-size:11px;color:#4d6280;margin-top:16px;line-height:1.5;text-align:center}
+.ok{display:none;text-align:center;color:#00ff9d;font-size:15px;margin-top:16px}
+</style></head><body>
+<div class="preview-banner">👁️ VISTA PREVIA — así se ve el portal en el móvil. El real lo sirve el ESP32 en Modo 2. Aquí el envío es solo demostración.</div>
+<form class="card" id="f" onsubmit="return demo(event)">
+<h1>WiFi de Invitados</h1>
+<p class="sub">Regístrate para conectarte</p>
+<label>Nombre</label>
+<input name="nombre" required maxlength="60" placeholder="Tu nombre">
+<label>Apellido</label>
+<input name="apellido" required maxlength="60" placeholder="Tu apellido">
+<label>Teléfono</label>
+<input name="telefono" required maxlength="30" type="tel" placeholder="Ej. 099 123 4567">
+<button type="submit">Conectarme</button>
+<p class="ok" id="ok">✅ ¡Listo! (demostración — no se guardó nada)</p>
+<p class="note">Red de invitados. Al registrarte aceptas dejar tus datos de contacto para el acceso.</p>
+</form>
+<script>
+function demo(e){e.preventDefault();document.getElementById('ok').style.display='block';return false;}
+</script>
+</body></html>

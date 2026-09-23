@@ -1,0 +1,84 @@
+%============================ CONCLUSIONES (ENTREGA 4) ======================
+\chapter{Conclusiones y recomendaciones}
+\label{cap:conclusiones}
+
+Este capítulo presenta el cierre general del proyecto EILOR. Las conclusiones
+integran los resultados funcionales, técnicos y formativos, y explicitan las
+limitaciones que deben considerarse al interpretar el prototipo. Finalmente se
+formulan recomendaciones concretas para su uso responsable y evolución.
+
+\section{Conclusiones generales y limitaciones}
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item \textbf{La solución cumple el objetivo general planteado.} EILOR integra
+  un ESP32, un servidor Node.js y un dashboard web para observar la banda de
+  2.4~GHz, identificar dispositivos y administrar una red propia de invitados.
+  Las pruebas funcionales confirmaron el escaneo Wi\nobreakdash-Fi, el radar BLE,
+  el SoftAP, el portal cautivo y la actualización en tiempo real. La conclusión
+  se limita a las tecnologías y condiciones evaluadas; el prototipo no pretende
+  sustituir un analizador de espectro profesional ni una auditoría especializada.
+
+  \item \textbf{La arquitectura de tres capas es viable, reproducible y de bajo
+  costo.} La comunicación mediante WebSocket, persistencia local y publicación
+  mediante túnel TLS permitió obtener una mediana de 2.5~ms entre la ingesta y la
+  difusión de eventos, con un costo estimado de hardware de USD~24.20 por unidad.
+  La persistencia en archivos JSON resulta adecuada para una demostración y una
+  instalación pequeña, pero limita las consultas, la concurrencia y la retención
+  cuando aumenta el volumen de datos.
+
+  \item \textbf{Los indicadores de radio son útiles para diagnóstico relativo.}
+  El puntaje de interferencia, la recomendación de canales, el RSSI, el catálogo
+  OUI y la detección de SSID repetidos aportan información operativa para localizar
+  congestión y cambios en el entorno. Sin embargo, el RSSI no proporciona una
+  distancia métrica precisa y la heurística de gemelo malicioso puede producir
+  falsos positivos en redes mesh o falsos negativos ante una clonación más avanzada.
+
+  \item \textbf{La seguridad implementada protege el flujo básico, pero no alcanza
+  un perfil de producción endurecido.} La validación de sesión y token de
+  dispositivo, las respuestas 401/200 y el transporte TLS/WSS reducen el acceso no
+  autorizado en el escenario probado. Persisten limitaciones: la contraseña del
+  dashboard requiere un mecanismo de hashing y control de intentos, los tokens
+  deben rotarse y el despliegue depende de la protección de las credenciales y de
+  la configuración del túnel.
+
+  \item \textbf{El principal valor de EILOR es formativo y de gestión responsable.}
+  El proyecto hace observables conceptos como interferencia, BLE, OUI,
+  aleatorización de MAC, portal cautivo y autenticación, con hardware accesible y
+  código auditable. Su uso válido se restringe a redes propias, información de
+  baliza públicamente radiada y registros obtenidos con aviso y consentimiento;
+  no cubre 5~GHz/6~GHz, no decodifica tráfico de terceros y no autoriza la
+  suplantación de redes ajenas.
+\end{enumerate}
+
+\section{Recomendaciones}
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item \textbf{Endurecer la autenticación antes de cualquier despliegue real:}
+  almacenar contraseñas con hashing y sal, limitar intentos de inicio de sesión,
+  rotar periódicamente el token del dispositivo y mantener un registro de auditoría.
+
+  \item \textbf{Migrar la persistencia cuando crezca el volumen:} sustituir los
+  archivos JSON por SQLite en instalaciones pequeñas o PostgreSQL en la nube,
+  conservando la interfaz de \code{lib/store} para no acoplar la lógica de negocio
+  al motor de almacenamiento.
+
+  \item \textbf{Calibrar y documentar cada instalación:} registrar ubicación,
+  orientación de la antena, tipo de carcasa, fuente de alimentación y condiciones
+  del entorno; interpretar RSSI y recomendación de canal como tendencias relativas,
+  no como mediciones absolutas.
+
+  \item \textbf{Aplicar un protocolo de privacidad y operación:} usar únicamente
+  SSID propios e identificables, mostrar el aviso del portal, solicitar los datos
+  mínimos, restringir las exportaciones CSV, definir un periodo de retención y
+  retirar las credenciales del código fuente antes de publicar el firmware.
+
+  \item \textbf{Ampliar la validación de forma gradual:} probar el sistema durante
+  periodos prolongados y con varios dispositivos, comparar resultados en distintos
+  entornos y, solo después, evaluar soporte multi-dispositivo, analítica histórica,
+  cobertura de 5~GHz y escalamiento del WebSocket mediante un broker.
+\end{enumerate}
+
+\noindent En conjunto, EILOR queda validado como prototipo funcional, económico y
+didáctico para monitoreo responsable de redes propias. Las recomendaciones definen
+las condiciones mínimas para pasar de una demostración controlada a una operación
+más robusta, segura y mantenible.

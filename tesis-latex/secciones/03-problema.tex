@@ -1,0 +1,33 @@
+%============================ PROBLEMA (ENTREGA 1) ==========================
+\chapter{Planteamiento y delimitación del problema}
+\label{cap:problema}
+
+\section{Descripción del problema}
+La saturación de la banda no licenciada de 2.4~GHz produce, en entornos reales, síntomas recurrentes: caídas de rendimiento, latencias variables, desconexiones intermitentes y una experiencia de usuario deficiente. La causa suele ser invisible para el usuario final ---interferencia co\nobreakdash-canal y de canal adyacente, exceso de puntos de acceso compitiendo por el mismo canal, o dispositivos BLE saturando las frecuencias de \emph{advertising}--- y su diagnóstico exige instrumentación que la mayoría de pequeños negocios no posee. A esta problemática técnica se suma una dimensión de seguridad: la facilidad con que puede desplegarse un punto de acceso que imite a una red legítima hace que los usuarios sean vulnerables a la captura de información si no existen mecanismos de concientización y control \parencite{owasp2021,callegati2009}.
+
+El problema que aborda EILOR se formula así: \emph{no existe, para el pequeño negocio o el laboratorio educativo, una herramienta asequible que permita simultáneamente (i)~diagnosticar la ocupación e interferencia del espectro de 2.4~GHz en tiempo real, (ii)~identificar dispositivos y posibles amenazas inalámbricas, y (iii)~gestionar de forma responsable el acceso de invitados a una red propia}.
+
+\section{Contextualización}
+
+\subsection{Nivel macro}
+A escala global, la proliferación de dispositivos IoT ---proyectada en decenas de miles de millones de unidades--- presiona de manera sostenida las bandas no licenciadas \parencite{akyildiz2006}. La gestión eficiente del espectro se ha convertido en una línea de investigación consolidada, desde la radio cognitiva hasta las técnicas de \emph{spectrum sensing} \parencite{yucek2009}. En este contexto macro, disponer de instrumentos de medición democratizados es un facilitador tanto del rendimiento de las redes como de la formación de profesionales.
+
+\subsection{Nivel meso}
+En el ámbito de las pequeñas y medianas organizaciones (cafeterías, comercios, oficinas, instituciones educativas), la conectividad Wi\nobreakdash-Fi es un servicio esperado, pero rara vez se administra con criterio técnico. La selección del canal se deja habitualmente al valor por defecto del router, y la red de invitados ---cuando existe--- no distingue entre usuarios ni recopila información de contacto útil para el negocio. La ausencia de visibilidad sobre el espectro y sobre los dispositivos presentes limita tanto la optimización del servicio como la respuesta ante incidentes.
+
+\subsection{Nivel micro}
+En el nivel micro ---el de un local concreto o un laboratorio de aula--- el problema se materializa en decisiones cotidianas: ¿en qué canal debería operar el punto de acceso para minimizar interferencia?, ¿cuántos y qué tipo de dispositivos hay alrededor?, ¿existe algún punto de acceso que suplante el nombre de la red del negocio?, ¿cómo registrar de forma sencilla a los invitados que se conectan? EILOR responde a estas preguntas concretas con una interfaz única y datos en vivo.
+
+\section{Formulación del problema}
+\textbf{Pregunta general:} ¿Cómo diseñar e implementar un sistema de bajo costo que permita el monitoreo en tiempo real del espectro de 2.4~GHz, la identificación de dispositivos y amenazas inalámbricas, y la gestión responsable del acceso de invitados mediante un portal cautivo?
+
+\noindent\textbf{Preguntas específicas:}
+\begin{itemize}[leftmargin=1.4em]
+  \item ¿Qué arquitectura de hardware y software satisface el escaneo de Wi\nobreakdash-Fi y BLE (en modos dedicados conmutables) con visualización en tiempo real?
+  \item ¿Qué algoritmo de análisis permite estimar la interferencia por canal y recomendar el canal óptimo?
+  \item ¿Cómo detectar puntos de acceso de tipo gemelo malicioso e identificar el fabricante de un dispositivo a partir de su dirección MAC?
+  \item ¿Qué mecanismos de seguridad y de protección de datos deben incorporarse para un portal de registro de invitados?
+\end{itemize}
+
+\section{Objetivos preliminares y viabilidad}
+El problema es abordable con recursos accesibles: un ESP32 (costo aproximado inferior a USD~10), una pantalla OLED, un pulsador y un servidor Node.js ejecutable en cualquier equipo o en la nube. La viabilidad técnica se sustenta en la capacidad dual\nobreakdash-radio del ESP32 \parencite{espressif2023} y en la madurez de las tecnologías web de tiempo real \parencite{rfc6455}. Los objetivos formales se detallan en el Capítulo~\ref{cap:objetivos}.

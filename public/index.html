@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EILOR 2.4GHz — Tactical Spectrum Analyzer & SoftAP Controller</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-tactical">
+
+  <!-- Ambient Radar Grids & Neon Glow -->
+  <div class="ambient-glow glow-cyan"></div>
+  <div class="ambient-glow glow-emerald"></div>
+  <div class="noise-grid-overlay"></div>
+
+  <!-- LOGIN OVERLAY (session gate for control actions) -->
+  <div class="login-overlay" id="loginOverlay" hidden>
+    <form class="login-card card-bezel" id="loginForm" onsubmit="return false;">
+      <div class="login-brand">
+        <div class="radar-monogram"><i data-lucide="radio" class="icon-pulse"></i></div>
+        <div>
+          <h2>EILOR — Acceso al Controlador</h2>
+          <p>Introduce la contraseña para habilitar comandos del ESP32 (modos y SoftAP).</p>
+        </div>
+      </div>
+      <label for="loginPasswordInput">CONTRASEÑA:</label>
+      <input type="password" id="loginPasswordInput" class="tactical-input" placeholder="EILOR_PASSWORD" autocomplete="current-password">
+      <div class="login-error" id="loginError" hidden></div>
+      <button class="btn-deploy-ap" onclick="submitLogin()">
+        <i data-lucide="log-in" class="icon-16"></i>
+        <span>INICIAR SESIÓN</span>
+      </button>
+      <button class="btn-micro-term login-skip" onclick="dismissLogin()">Continuar solo lectura</button>
+    </form>
+  </div>
+
+  <div class="app-shell">
+    
+    <!-- Top Tactical Header -->
+    <header class="top-nav-bar">
+      <div class="brand-box">
+        <div class="radar-monogram">
+          <i data-lucide="radio" class="icon-pulse"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">EILOR RF SPECTRUM <span class="badge-port">PUERTO :3002</span></h1>
+          <p class="brand-subtitle">Análisis de Espectro 2.4GHz, Radar BLE y Controlador SoftAP</p>
+        </div>
+      </div>
+
+      <div class="status-chips-row">
+        <!-- ESP32 Hardware Status Pill -->
+        <div class="status-pill esp32-pill" id="esp32StatusPill">
+          <span class="live-beacon beacon-offline" id="esp32Beacon"></span>
+          <span id="esp32StatusText">ESP32: DESCONECTADO</span>
+        </div>
+
+        <!-- Mode Pill -->
+        <div class="status-pill mode-pill">
+          <span class="mode-lbl">MODO ACTIVO:</span>
+          <span class="mode-val" id="activeModeDisplay">Wi-Fi Spectrum</span>
+        </div>
+
+        <div class="metric-pill">
+          <span class="metric-lbl">DISPOSITIVOS ACTIVOS</span>
+          <span class="metric-val" id="totalActiveCount">0</span>
+        </div>
+
+        <div class="metric-pill">
+          <span class="metric-lbl">TOTAL PAQUETES</span>
+          <span class="metric-val" id="totalPacketsCount">0</span>
+        </div>
+
+        <div class="action-btns-group">
+          <button class="btn-tactical btn-session" id="sessionBtn" onclick="handleSessionButton()" title="Iniciar o cerrar sesión">
+            <i data-lucide="lock" class="icon-14"></i> <span id="sessionBtnLabel">Iniciar Sesión</span>
+          </button>
+          <button class="btn-tactical btn-clear" onclick="clearScanData()" title="Limpiar registros y logs">
+            <i data-lucide="trash-2" class="icon-14"></i> Limpiar
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- REMOTE HARDWARE CONTROLLER (4 MODES) -->
+    <section class="card-bezel remote-control-bar">
+      <div class="remote-header">
+        <div class="title-with-icon">
+          <i data-lucide="sliders" class="icon-cyan"></i>
+          <div>
+            <h3>Controlador de Modos del ESP32 (Pulsador Virtual)</h3>
+            <p>Conmutación en tiempo real de funciones y emisión por WebSocket</p>
+          </div>
+        </div>
+
+        <button class="btn-virtual-pulsador" onclick="remoteToggleMode()" title="Alterna al siguiente modo del ESP32">
+          <i data-lucide="toggle-right" class="icon-20"></i>
+          <span>PULSAR BOTÓN VIRTUAL (SIGUIENTE MODO)</span>
+        </button>
+      </div>
+
+      <!-- 4 Modes Selector Grid -->
+      <div class="modes-grid-selector-4">
+        <button class="btn-mode-select active-mode" id="btnMode0" onclick="remoteSetMode(0)">
+          <span class="mode-num">0</span>
+          <div class="mode-info">
+            <strong>Wi-Fi Spectrum</strong>
+            <small>Saturación Canales 1-13</small>
+          </div>
+        </button>
+
+        <button class="btn-mode-select" id="btnMode1" onclick="remoteSetMode(1)">
+          <span class="mode-num">1</span>
+          <div class="mode-info">
+            <strong>BLE Radar Proximity</strong>
+            <small>Radar Balizas Bluetooth</small>
+          </div>
+        </button>
+
+        <button class="btn-mode-select" id="btnMode2" onclick="remoteSetMode(2)">
+          <span class="mode-num">2</span>
+          <div class="mode-info">
+            <strong>SoftAP Hotspot</strong>
+            <small>Punto de Acceso / Clon</small>
+          </div>
+        </button>
+
+        <button class="btn-mode-select" id="btnMode3" onclick="remoteSetMode(3)">
+          <span class="mode-num">3</span>
+          <div class="mode-info">
+            <strong>Standby / Telemetry</strong>
+            <small>Escucha y bajo consumo</small>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- SOFTAP DEPLOYMENT BAR -->
+    <section class="card-bezel softap-card">
+      <div class="card-header-row">
+        <div class="title-with-icon">
+          <i data-lucide="wifi" class="icon-emerald"></i>
+          <div>
+            <h2>Despliegue de Punto de Acceso SoftAP (Emisión / Clonación)</h2>
+            <p>Configura y emite un punto de acceso Wi-Fi desde el ESP32 en el canal que elijas</p>
+          </div>
+        </div>
+
+        <div class="ap-status-badge" id="apStatusBadge">
+          <span class="live-beacon beacon-offline" id="apBeacon"></span>
+          <span id="apStatusText">AP: INACTIVO</span>
+        </div>
+      </div>
+
+      <div class="softap-form-row">
+        <div class="form-group-flex">
+          <label for="apSsidInput">SSID DEL PUNTO DE ACCESO:</label>
+          <input type="text" id="apSsidInput" class="tactical-input" placeholder="Nombre de red (ej. Wi-Fi_Gratis_Mall)" value="EILOR-AP-CLONE">
+        </div>
+
+        <div class="form-group-fixed">
+          <label for="apChannelSelect">CANAL (1-13):</label>
+          <select id="apChannelSelect" class="tactical-select">
+            <option value="1">Canal 1 (2412 MHz)</option>
+            <option value="2">Canal 2 (2417 MHz)</option>
+            <option value="3">Canal 3 (2422 MHz)</option>
+            <option value="4">Canal 4 (2427 MHz)</option>
+            <option value="5">Canal 5 (2432 MHz)</option>
+            <option value="6" selected>Canal 6 (2437 MHz)</option>
+            <option value="7">Canal 7 (2442 MHz)</option>
+            <option value="8">Canal 8 (2447 MHz)</option>
+            <option value="9">Canal 9 (2452 MHz)</option>
+            <option value="10">Canal 10 (2457 MHz)</option>
+            <option value="11">Canal 11 (2462 MHz)</option>
+            <option value="12">Canal 12 (2467 MHz)</option>
+            <option value="13">Canal 13 (2472 MHz)</option>
+          </select>
+        </div>
+
+        <button class="btn-deploy-ap" onclick="deployManualSoftAp()">
+          <i data-lucide="radio-tower" class="icon-16"></i>
+          <span>DESPLEGAR SOFTAP EN ESP32</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-main-grid">
+      
+      <!-- LEFT / TOP COLUMN: 2.4GHz RF HEATMAP & SPECTRUM DENSITY -->
+      <section class="card-bezel heatmap-card">
+        <div class="card-header-row">
+          <div class="title-with-icon">
+            <i data-lucide="activity" class="icon-cyan"></i>
+            <div>
+              <h2>Saturación Espectral Wi-Fi 2.4 GHz (Canales 1 al 13)</h2>
+              <p>Mapeo de congestión y diagnóstico del espectro en tiempo real</p>
+            </div>
+          </div>
+          
+          <div class="channel-recommendations-box">
+            <div class="recom-item recom-clean">
+              <i data-lucide="check-circle-2" class="icon-14"></i>
+              <span>Canal Más Limpio: <strong id="bestChannelTag">CH 11</strong></span>
+            </div>
+            <div class="recom-item recom-busy">
+              <i data-lucide="alert-triangle" class="icon-14"></i>
+              <span>Canal Más Saturado: <strong id="worstChannelTag">CH 6</strong></span>
+            </div>
+            <div class="recom-item recom-suggest">
+              <i data-lucide="target" class="icon-14"></i>
+              <span>Canal Recomendado (1/6/11): <strong id="recommendedChannelTag">CH 11</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wi-Fi 2.4GHz Spectrum Thermal Bars (1-13) -->
+        <div class="spectrum-channels-container" id="wifiSpectrumContainer">
+          <!-- Dynamically populated 13 Channels -->
+        </div>
+
+        <!-- BLE Advertisement Spectrum Bars -->
+        <div class="ble-channels-strip">
+          <span class="strip-label">CANALES PRIMARIOS BLE ADVERTISING:</span>
+          <div class="ble-channels-grid" id="bleSpectrumContainer">
+            <!-- Dynamically populated BLE Channels 37, 38, 39 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: 2D CIRCULAR RADAR PROXIMITY SWEEP -->
+      <section class="card-bezel radar-card">
+        <div class="card-header-row">
+          <div class="title-with-icon">
+            <i data-lucide="crosshair" class="icon-emerald"></i>
+            <div>
+              <h2>Radar de Balizas BLE</h2>
+              <p>Posicionamiento radial estimado por RSSI real</p>
+            </div>
+          </div>
+          <span class="radar-range-tag">RANGO &lt; 25m</span>
+        </div>
+
+        <div class="radar-scope-wrapper">
+          <div class="radar-sweep-beam"></div>
+          
+          <div class="radar-ring ring-1"><span class="ring-label">2m</span></div>
+          <div class="radar-ring ring-2"><span class="ring-label">5m</span></div>
+          <div class="radar-ring ring-3"><span class="ring-label">12m</span></div>
+          <div class="radar-ring ring-4"><span class="ring-label">25m</span></div>
+          <div class="radar-crosshair-x"></div>
+          <div class="radar-crosshair-y"></div>
+
+          <!-- Radar Blips Layer -->
+          <div id="radarBlipsLayer" class="radar-blips-container">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL DE FLUJO DE TELEMETRÍA Y LOGS EN VIVO (ESP32 DATA FLOW) -->
+      <section class="card-bezel flow-card">
+        <div class="card-header-row">
+          <div class="title-with-icon">
+            <i data-lucide="terminal" class="icon-cyan"></i>
+            <div>
+              <h2>Panel de Telemetría y Flujo de Comandos</h2>
+              <p>Tramas WebSocket en vivo, eventos de conexión y respuestas de comandos</p>
+            </div>
+          </div>
+
+          <div class="terminal-actions">
+            <span class="log-rate-tag" id="packetRateTag">0 paq/s</span>
+            <button class="btn-micro-term" onclick="toggleAutoScroll()" id="btnAutoScroll">Auto-Scroll: ON</button>
+            <button class="btn-micro-term" onclick="clearTerminalLogs()">Limpiar Consola</button>
+          </div>
+        </div>
+
+        <!-- Mini-gráfica de serie temporal (histórico de actividad) -->
+        <div class="sparkline-strip">
+          <div class="sparkline-legend">
+            <span class="spark-dot spark-dot-active"></span> Activos
+            <span class="spark-dot spark-dot-rate"></span> Paquetes/min
+            <span class="sparkline-window" id="sparklineWindow"></span>
+          </div>
+          <canvas id="timeseriesSparkline" class="sparkline-canvas" height="60"></canvas>
+        </div>
+
+        <div class="telemetry-terminal-box" id="terminalLogBox">
+          <div class="terminal-line line-sys">
+            <span class="log-time">[00:00:00]</span>
+            <span class="log-tag tag-sys">SYSTEM</span>
+            <span class="log-text">Iniciando monitor de telemetría WebSocket en tiempo real...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTTOM ROW: LIVE DEVICES SCANNER TABLE WITH CLONE AP BUTTON -->
+      <section class="card-bezel table-card">
+        <div class="card-header-row">
+          <div class="title-with-icon">
+            <i data-lucide="list-filter" class="icon-cyan"></i>
+            <div>
+              <h2>Registro de Dispositivos & Clonación Rápida</h2>
+              <p>Datos reales capturados por el hardware ESP32. Pulsa "Crear AP" para emitir el clon.</p>
+            </div>
+          </div>
+
+          <div class="filter-controls-row">
+            <div class="filter-tabs">
+              <button class="filter-tab-btn active" data-filter="all" onclick="setDeviceFilter('all')">Todos (<span id="countAll">0</span>)</button>
+              <button class="filter-tab-btn" data-filter="wifi" onclick="setDeviceFilter('wifi')">Wi-Fi (<span id="countWifi">0</span>)</button>
+              <button class="filter-tab-btn" data-filter="ble" onclick="setDeviceFilter('ble')">Bluetooth (<span id="countBle">0</span>)</button>
+            </div>
+            <input type="text" id="searchTableInput" class="table-search-input" placeholder="Buscar SSID, MAC..." oninput="handleTableSearch(this.value)">
+          </div>
+        </div>
+
+        <div class="table-container-scroll">
+          <table class="tactical-table">
+            <thead>
+              <tr>
+                <th>TIPO</th>
+                <th>NOMBRE / SSID / DISPOSITIVO</th>
+                <th>DIRECCIÓN MAC / BSSID</th>
+                <th>FABRICANTE (OUI)</th>
+                <th>CANAL</th>
+                <th>POTENCIA RSSI</th>
+                <th>DISTANCIA EST.</th>
+                <th>SEGURIDAD / TIPO</th>
+                <th>ACCIÓN RÁPIDA</th>
+              </tr>
+            </thead>
+            <tbody id="deviceTableBody">
+              <tr>
+                <td colspan="9" class="empty-table-state">
+                  <div class="empty-wrap">
+                    <i data-lucide="radio-tower" class="icon-32"></i>
+                    <p>Esperando telemetría en tiempo real desde el ESP32...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REGISTROS DEL PORTAL CAUTIVO (INVITADOS) -->
+      <section class="card-bezel registrations-card">
+        <div class="card-header-row">
+          <div class="title-with-icon">
+            <i data-lucide="clipboard-list" class="icon-emerald"></i>
+            <div>
+              <h2>Registros del Portal Cautivo (Invitados)</h2>
+              <p>Altas enviadas desde el formulario del punto de acceso en tiempo real</p>
+            </div>
+          </div>
+
+          <div class="registrations-actions">
+            <span class="metric-pill">
+              <span class="metric-lbl">TOTAL REGISTROS</span>
+              <span class="metric-val" id="totalRegistrationsCount">0</span>
+            </span>
+            <a class="btn-tactical" href="/api/registrations.csv" id="btnExportCsv" title="Descargar registros en CSV">
+              <i data-lucide="download" class="icon-14"></i> Exportar CSV
+            </a>
+            <button class="btn-tactical btn-clear" onclick="clearRegistrations()" title="Borrar todos los registros">
+              <i data-lucide="trash-2" class="icon-14"></i> Borrar
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container-scroll">
+          <table class="tactical-table">
+            <thead>
+              <tr>
+                <th>FECHA / HORA</th>
+                <th>NOMBRE</th>
+                <th>APELLIDO</th>
+                <th>TELÉFONO</th>
+                <th>RED (SSID)</th>
+              </tr>
+            </thead>
+            <tbody id="registrationsTableBody">
+              <tr>
+                <td colspan="5" class="empty-table-state">
+                  <div class="empty-wrap">
+                    <i data-lucide="clipboard-list" class="icon-32"></i>
+                    <p>Aún no hay registros. Aparecerán aquí cuando alguien complete el formulario del portal.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer Meta -->
+    <footer class="tactical-footer">
+      <span>EILOR RF ESP32 SUITE • WebSocket En Vivo: <code>ws://localhost:3002</code> • 4 Modos Integrados</span>
+      <span id="lastUpdatedClock">Sincronizado: --:--:--</span>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
